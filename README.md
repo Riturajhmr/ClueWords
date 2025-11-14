@@ -3,12 +3,6 @@
 ClueWords is a board game for 4-8 players. Two teams compete by having a spymaster give one word clue that can point to multiple words on the board. The other players on the team attempt to guess their team’s words while avoiding the words of the other team.
 This application is built using **Node.js, Express.js, React.js, Socket.io, MongoDB and AWS.**
 
-## Contributors <img src="https://cdn0.iconfinder.com/data/icons/occupation-002/64/programmer-programming-occupation-avatar-512.png" width="40">
-- [Bonnie Li](https://github.com/bonnieli) (Project Lead)
-- [Karl Secen](https://github.com/karlkristopher)
-- [Nicholas Chumney](https://github.com/chumnend)
-- [Jorawar Singh](https://github.com/jorawarSinghNijjar)
-
 ## Installation <img src="https://img.icons8.com/color/452/npm.png" width="40">
 
 1. Clone the repository
