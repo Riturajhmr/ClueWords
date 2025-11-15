@@ -2,6 +2,10 @@ const GameEngine = require("../models/gameEngine/GameEngine");
 const Game = require("../models/Game");
 const User = require("../models/User");
 
+/**
+ * Creates a new game instance
+ * Initializes game engine, saves to Redis and MongoDB
+ */
 exports.postCreateGame = async (req, res, next) => {
   try {
     if (!req.user) {
@@ -54,9 +58,7 @@ exports.postCreateGame = async (req, res, next) => {
       game: gameEngine,
     });
   } catch (err) {
-    if (err) {
-      console.log(err);
-      return next(err);
-    }
+    console.error("Error creating game:", err);
+    return next(err);
   }
 };

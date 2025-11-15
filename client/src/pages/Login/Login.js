@@ -55,12 +55,10 @@ const Login = (props) => {
       props.history.go();
     } catch (err) {
       if (err.response) {
-        console.log(err.response.data);
         const errObj = err.response.data;
-        setErrors(errObj.errors);
+        setErrors(errObj.errors || {});
       } else {
-        // TODO: handle generic errors
-        console.log(err.message);
+        setErrors({ general: "An error occurred. Please try again." });
       }
       setLoading(false);
     }
@@ -84,8 +82,8 @@ const Login = (props) => {
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            error={errors.email !== undefined}
-            helperText={errors.email}
+            error={errors?.email !== undefined}
+            helperText={errors?.email}
           />
 
           <TextField
@@ -101,8 +99,8 @@ const Login = (props) => {
             placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            error={errors.password !== undefined}
-            helperText={errors.password}
+            error={errors?.password !== undefined}
+            helperText={errors?.password}
           />
 
           <Button

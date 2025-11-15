@@ -6,10 +6,20 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: "center",
     alignItems: "center",
     background: theme.white,
-    cursor: props.clicked ? "auto" : "pointer",
-    transition: "transform .2s",
+    cursor: props.clicked ? "default" : "pointer",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    borderRadius: "12px",
+    padding: "1.5rem",
+    minHeight: "120px",
+    boxShadow: props.clicked 
+      ? "0 4px 6px rgba(0,0,0,0.1)" 
+      : "0 2px 8px rgba(0,0,0,0.15)",
     "&:hover:not(.clicked)": {
-      transform: "scale(1.2)",
+      transform: "translateY(-4px) scale(1.02)",
+      boxShadow: "0 8px 16px rgba(0,0,0,0.2)",
+    },
+    "&.clicked": {
+      opacity: 0.8,
     },
   }),
   Red: (props) => ({
@@ -33,9 +43,14 @@ const useStyles = makeStyles((theme) => ({
       color: theme.grey.mediumDark,
     },
   }),
-  Assassin: {
-    color: theme.grey.dark,
-  },
+  Assassin: (props) => ({
+    color: props.isSpyMaster ? "#8b0000" : theme.grey.dark,
+    "&.clicked": {
+      background: "linear-gradient(135deg, #1a1a1a 0%, #000000 100%)",
+      color: "#ff0000",
+      fontWeight: 900,
+    },
+  }),
 }));
 
 export default useStyles;

@@ -55,7 +55,53 @@ export const theme = createMuiTheme({
   white: colors.white,
   black: colors.black,
   palette: {
-    primary: { main: "#32be72", contrastText: "#fff" }, // This is Green, for "Create Game", "New Game", "Done"
-    secondary: { main: "#44456c", contrastText: "#fff" },
+    primary: { 
+      main: "#2563eb", 
+      light: "#3b82f6",
+      dark: "#1e40af",
+      contrastText: "#fff" 
+    },
+    secondary: { 
+      main: "#10b981", 
+      light: "#34d399",
+      dark: "#059669",
+      contrastText: "#fff" 
+    },
+    error: { main: "#ef4444" },
+    warning: { main: "#f59e0b" },
+    info: { main: "#3b82f6" },
+    success: { main: "#10b981" },
+    background: {
+      default: "#f8f9fa",
+      paper: "#ffffff"
+    }
+  },
+  overrides: {
+    MuiButton: {
+      root: {
+        borderRadius: 8,
+        padding: "8px 16px",
+        fontWeight: 500,
+      },
+      contained: {
+        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+        "&:hover": {
+          boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+        }
+      }
+    },
+    MuiCard: {
+      root: {
+        borderRadius: 12,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+      }
+    },
+    MuiTextField: {
+      root: {
+        "& .MuiOutlinedInput-root": {
+          borderRadius: 8,
+        }
+      }
+    }
   },
 });

@@ -17,9 +17,16 @@ const useStyles = makeStyles((theme) => ({
   Brand: {
     textTransform: "uppercase",
     letterSpacing: "0.6rem",
+    fontWeight: 700,
+    background: "linear-gradient(135deg, #2563eb 0%, #10b981 100%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
     "& a": {
       textDecoration: "none",
-      color: "black",
+      color: "transparent",
+      background: "linear-gradient(135deg, #2563eb 0%, #10b981 100%)",
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
     },
   },
   ProfileItem: {

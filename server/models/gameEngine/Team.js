@@ -7,12 +7,10 @@ class Team {
 
   addPoint() {
     this.points += 1;
-    console.log(`${this.name} team gains a point`);
   }
 
   addPlayer(player) {
     this.players.push(player);
-    console.log(`${player.name} added to team ${this.name}`);
   }
 
   getName() {

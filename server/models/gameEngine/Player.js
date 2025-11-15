@@ -16,7 +16,6 @@ class Player {
 
   setRole(role) {
     this.role = role;
-    console.log(`${this.name} is ${this.role}`);
   }
   getRole() {
     return this.role;

@@ -26,15 +26,18 @@ app.use(logger("dev"));
 app.use(passport.initialize());
 passport.use(passportStrategy);
 
-// redis connection
-redis
-  .createClient(config.redis)
-  .on("connect", () => {
-    console.log("Redis connected");
-  })
-  .on("error", (err) => {
+// Redis connection for caching game state
+const redisClient = redis.createClient(config.redis);
+redisClient.on("connect", () => {
+  console.log("Redis connected successfully");
+});
+redisClient.on("error", (err) => {
+  console.error("Redis connection error:", err);
+  // Don't throw - allow app to continue without Redis in development
+  if (config.env === "production") {
     throw err;
-  });
+  }
+});
 
 // database connection using Mongoose
 mongoose
@@ -50,6 +53,21 @@ mongoose
   .catch((err) => console.log(err));
 
 // setup routes
+// Root route
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "CodeWords API Server",
+    version: "1.0.0",
+    endpoints: {
+      auth: "/users/register, /users/login, /users/logout",
+      game: "/create-game",
+      profile: "/profile",
+      email: "/email",
+    },
+  });
+});
+
 app.use("/users", authRouter);
 app.use(gameRouter);
 app.use(emailRouter);
@@ -57,7 +75,11 @@ app.use(profileRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-  next(createError(404));
+  res.status(404).json({
+    success: false,
+    error: "Not found",
+    message: `Route ${req.method} ${req.path} not found`,
+  });
 });
 
 // error handler
@@ -67,8 +89,14 @@ app.use(function (err, req, res, next) {
   res.locals.error = req.app.get("env") === "development" ? err : {};
 
   // render the error page
-  res.status(err.status || 500);
-  res.json({ error: err });
+  const status = err.status || 500;
+  res.status(status);
+  res.json({
+    success: false,
+    error: err.message || "Internal Server Error",
+    message: err.message || "An error occurred",
+    ...(req.app.get("env") === "development" && { stack: err.stack }),
+  });
 });
 
 module.exports = app;

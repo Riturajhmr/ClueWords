@@ -20,7 +20,7 @@ const NavBar = (props) => {
       <nav className={classes.NavBar}>
         <Box className={classes.NavBarWrap}>
           <Typography className={classes.Brand} variant="h3">
-            <Link to="/">Cluewords</Link>
+            <Link to="/">CodeWords</Link>
           </Typography>
           <ProfileBar history={props.history} />
         </Box>

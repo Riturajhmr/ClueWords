@@ -28,7 +28,7 @@ const EditNameDialog = (props) => {
         }));
       }
     } catch (err) {
-      console.log(err);
+      // Error handling
     }
     props.closeDialog();
   };

@@ -6,10 +6,17 @@ const GameEngine = require("./models/gameEngine/GameEngine");
 const Timer = require("./models/gameEngine/Timer");
 const cookie = require("cookie");
 
+/**
+ * Socket.io configuration and event handlers
+ * Manages real-time game communication, player connections, and game state updates
+ * @param {Object} server - HTTP server instance
+ */
 module.exports = (server) => {
   const io = require("socket.io")(server);
-  const clientDetails = {};
-  const roomDetails = {};
+  
+  // In-memory storage for active connections
+  const clientDetails = {}; // Maps socket.id to user info
+  const roomDetails = {};   // Maps gameId to room info (messages, clients, timer)
 
   io.use(function (socket, next) {
     if (socket.handshake.headers && socket.handshake.headers.cookie) {
@@ -23,12 +30,6 @@ module.exports = (server) => {
       next(new Error("Authentication error"));
     }
   }).on("connection", (socket) => {
-    // Listener to regulary update game
-    socket.on("fetch-game", async (recv) => {
-      const { gameId } = recv;
-      const currentGame = await GameEngine.getGame(gameId);
-      io.to(gameId).emit("update-game", currentGame);
-    });
 
     // Socket listener for game rooms
     socket.on("join-game", async (recv) => {
@@ -110,7 +111,7 @@ module.exports = (server) => {
     // Receive assigned roles emitted from FE
     socket.on("start-game", async (recv) => {
       const { gameId, players } = recv;
-      const errors = {};
+      const errors = [];
 
       try {
         const currentGame = await GameEngine.getGame(gameId);
@@ -145,7 +146,9 @@ module.exports = (server) => {
         await currentGame.save();
 
         // start the turn timer
-        roomDetails[gameId].timer.start();
+        if (roomDetails[gameId] && roomDetails[gameId].timer) {
+          roomDetails[gameId].timer.start();
+        }
 
         io.to(gameId).emit("update-roles", currentGame);
       } catch (err) {
@@ -155,6 +158,16 @@ module.exports = (server) => {
 
     socket.on("init-game", async (recv, fn) => {
       const { gameId } = recv;
+
+      // Check if clientDetails exists
+      if (!clientDetails[socket.id]) {
+        return fn({ error: "Client not found. Please join the game first." });
+      }
+
+      // Check if roomDetails exists
+      if (!roomDetails[gameId]) {
+        return fn({ error: "Room not found. Please join the game first." });
+      }
 
       // update room of joining client
       const alert = {
@@ -177,6 +190,12 @@ module.exports = (server) => {
     socket.on("message", (recv) => {
       const { gameId, msgData } = recv;
 
+      // Check if room exists
+      if (!roomDetails[gameId]) {
+        console.error(`Room ${gameId} not found for message`);
+        return;
+      }
+
       // save message into messages
       roomDetails[gameId].messages.push(msgData);
 
@@ -189,12 +208,19 @@ module.exports = (server) => {
       const { gameId, currentTurn, cardIndex } = recv;
 
       const currentGame = await GameEngine.getGame(gameId);
+      if (!currentGame) {
+        io.to(socket.id).emit("error", { message: "Game not found" });
+        return;
+      }
+
       currentGame.pickCard(currentTurn, cardIndex); // Result of the move would be in console for now
       await currentGame.save();
 
       // reset timer if turn changed
       if (currentGame.turn !== currentTurn) {
-        roomDetails[gameId].timer.start();
+        if (roomDetails[gameId] && roomDetails[gameId].timer) {
+          roomDetails[gameId].timer.start();
+        }
       }
 
       io.to(gameId).emit("update-game", currentGame);
@@ -203,15 +229,30 @@ module.exports = (server) => {
     socket.on("change-turn", async (recv) => {
       const { gameId } = recv;
 
+      // Check if room exists
+      if (!roomDetails[gameId]) {
+        io.to(socket.id).emit("error", { message: "Room not found" });
+        return;
+      }
+
       // Stop the timer
-      roomDetails[gameId].timer.stop();
+      if (roomDetails[gameId].timer) {
+        roomDetails[gameId].timer.stop();
+      }
 
       const currentGame = await GameEngine.getGame(gameId);
+      if (!currentGame) {
+        io.to(socket.id).emit("error", { message: "Game not found" });
+        return;
+      }
+
       currentGame.changeTurn();
       await currentGame.save();
 
       // Restart the timer
-      roomDetails[gameId].timer.start();
+      if (roomDetails[gameId].timer) {
+        roomDetails[gameId].timer.start();
+      }
 
       io.to(gameId).emit("update-game", currentGame);
     });
@@ -219,14 +260,20 @@ module.exports = (server) => {
     // Listener to end game
     socket.on("end-game", async (recv) => {
       const { gameId, winner, method } = recv;
-      console.log("WINNER", winner);
 
       const currentGame = await GameEngine.getGame(gameId);
+      if (!currentGame) {
+        io.to(socket.id).emit("error", { message: "Game not found" });
+        return;
+      }
+
       currentGame.gameOver(winner, method);
       await currentGame.save();
 
       // Stop the timer
-      roomDetails[gameId].timer.stop();
+      if (roomDetails[gameId] && roomDetails[gameId].timer) {
+        roomDetails[gameId].timer.stop();
+      }
 
       io.to(gameId).emit("update-game", currentGame);
     });
@@ -234,21 +281,24 @@ module.exports = (server) => {
     //Play again
     socket.on("play-again", async (gameId) => {
       const currentGame = await GameEngine.getGame(gameId);
+      if (!currentGame) {
+        io.to(socket.id).emit("error", { message: "Game not found" });
+        return;
+      }
+      
       currentGame.playAgain();
       await currentGame.save();
 
       io.to(gameId).emit("play-again", currentGame);
     });
 
-    // Listener to regulary update game
+    // Listener to regularly update game
     socket.on("fetch-game", async (recv) => {
-      console.log("recv", recv);
       const { gameId } = recv;
-      console.log("Update game");
-
       const currentGame = await GameEngine.getGame(gameId);
-
-      io.to(gameId).emit("fetch-game", currentGame);
+      if (currentGame) {
+        io.to(gameId).emit("update-game", currentGame);
+      }
     });
 
     // Clean up when a user disconnects
@@ -257,6 +307,11 @@ module.exports = (server) => {
       const user = clientDetails[socket.id];
       if (user !== undefined) {
         user.rooms.forEach(async (room) => {
+          // Check if room exists
+          if (!roomDetails[room]) {
+            return;
+          }
+
           const alert = {
             sender: "alert",
             message: `${user.name} left the game`,
@@ -269,7 +324,9 @@ module.exports = (server) => {
 
           // delete the room if all clients are gone
           if (!roomDetails[room].clients.length) {
-            roomDetails[room].timer.stop();
+            if (roomDetails[room].timer) {
+              roomDetails[room].timer.stop();
+            }
             delete roomDetails[room];
             await GameEngine.deleteGame(room);
           }

@@ -50,10 +50,9 @@ const Register = (props) => {
     } catch (err) {
       if (err.response) {
         const errObj = err.response.data;
-        setErrors(errObj.errors);
+        setErrors(errObj.errors || {});
       } else {
-        // TODO: handle generic errors
-        console.log(err.message);
+        setErrors({ general: "An error occurred. Please try again." });
       }
 
       setLoading(false);
@@ -79,8 +78,8 @@ const Register = (props) => {
             placeholder="Enter your name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            error={errors.name !== undefined}
-            helperText={errors.name}
+            error={errors?.name !== undefined}
+            helperText={errors?.name}
           />
 
           <TextField
@@ -96,8 +95,8 @@ const Register = (props) => {
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            error={errors.email !== undefined}
-            helperText={errors.email}
+            error={errors?.email !== undefined}
+            helperText={errors?.email}
           />
 
           <TextField
@@ -113,8 +112,8 @@ const Register = (props) => {
             placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            error={errors.password !== undefined}
-            helperText={errors.password}
+            error={errors?.password !== undefined}
+            helperText={errors?.password}
           />
 
           <Button

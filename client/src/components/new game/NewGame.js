@@ -61,14 +61,13 @@ const NewGame = (props) => {
       } else {
         const getData = await axios.post("/send-email", { emails, gameId: id });
         if (getData.data.error) {
-          console.log("Error:", getData.data.error);
           return null;
         }
         await setEmails([]);
         await setNewGame((prevState) => prevState + 1);
       }
     } catch (err) {
-      console.log(err);
+      // Error handling
     }
   };
 
@@ -103,11 +102,10 @@ const NewGame = (props) => {
       };
 
       const gameDetails = await setGame(players, spyMaster);
-      console.log("Emitting start-game:", gameDetails);
       localStorage.removeItem("newGame");
       socket.emit("start-game", gameDetails);
     } catch (err) {
-      console.log(err);
+      // Error handling
     }
   };
 

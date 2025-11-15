@@ -4,7 +4,15 @@ const validateRegister = require("../validations/register");
 const validateLogin = require("../validations/login");
 const config = require("../config");
 
+/**
+ * Authentication controller
+ * Handles user registration, login, and logout
+ */
 module.exports = {
+  /**
+   * Register a new user
+   * Validates input, creates user, returns JWT token
+   */
   async register(req, res, next) {
     try {
       const { errors, isValid } = validateRegister(req.body);
@@ -96,7 +104,10 @@ module.exports = {
     }
   },
 
-  // Logout
+  /**
+   * Logout user
+   * Clears authentication cookie
+   */
   logout(req, res, next) {
     res.clearCookie("token");
     res.send({ message: "Logout successful" });

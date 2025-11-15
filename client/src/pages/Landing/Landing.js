@@ -41,7 +41,8 @@ const Landing = (props) => {
       await setNewGame(1);
       await props.history.push(String(getData.data.game.id));
     } catch (err) {
-      console.log(err);
+      setError("Failed to create game. Please try again.");
+      setOpenDialog(true);
     }
   };
 
@@ -49,7 +50,7 @@ const Landing = (props) => {
     <Container className={classes.Landing} maxWidth="md">
       <Card className={classes.Card}>
         <Typography className={classes.Heading} variant="h2">
-          Welcome to Cluewords!
+          Welcome to CodeWords!
         </Typography>
 
         {!user ? (

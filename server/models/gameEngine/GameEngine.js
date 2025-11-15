@@ -8,8 +8,13 @@ const { words } = require("./utils/words");
 const Redis = require("ioredis");
 const config = require("../../config");
 
+// Redis connection for game state management
 const redis = new Redis(config.redis);
 
+/**
+ * GameEngine - Core game logic handler
+ * Manages game state, board creation, team management, and game flow
+ */
 class GameEngine {
   constructor(data = null) {
     if (!data) {
@@ -47,44 +52,67 @@ class GameEngine {
     }
   }
 
+  /**
+   * Retrieve game state from Redis
+   * @param {string} id - Game ID
+   * @returns {GameEngine|null} Game instance or null if not found
+   */
   static async getGame(id) {
     try {
       const response = await redis.get(id);
       if (!response) {
         return null;
       }
-
       return new this(JSON.parse(response));
     } catch (err) {
-      console.error(err);
+      console.error("Error retrieving game from Redis:", err);
       return null;
     }
   }
 
+  /**
+   * Delete game from Redis
+   * @param {string} id - Game ID
+   * @returns {boolean} Success status
+   */
   static async deleteGame(id) {
     try {
       await redis.del(id);
       return true;
     } catch (err) {
+      console.error("Error deleting game from Redis:", err);
       return false;
     }
   }
 
+  /**
+   * Save current game state to Redis
+   * @returns {boolean} Success status
+   */
   async save() {
     try {
       await redis.set(this.id, JSON.stringify(this));
       return true;
     } catch (err) {
-      console.error(err);
+      console.error("Error saving game to Redis:", err);
       return false;
     }
   }
 
-  // Get Board with all cards in an array
+  /**
+   * Get the current game board
+   * @returns {Array<Card>} Array of card objects
+   */
   getBoard() {
     return this.board;
   }
 
+  /**
+   * Create a randomized game board with 25 words
+   * Distribution: 9 cards for starting team, 8 for other team,
+   * 7 innocent cards, 1 assassin card
+   * @returns {Array<Card>} Shuffled array of 25 cards
+   */
   createBoard() {
     const randWords = shuffle(words).slice(0, 25);
     const board = [];
@@ -109,7 +137,11 @@ class GameEngine {
     return shuffle(board);
   }
 
-  // Team assignment to players
+  /**
+   * Assign a player to a team
+   * @param {Object} player - Player object with id and name
+   * @param {string} team - Team name ('red' or 'blue')
+   */
   assignTeam({ id, name }, team) {
     switch (team) {
       case this.redTeam.name:
@@ -123,7 +155,11 @@ class GameEngine {
     }
   }
 
-  // Assign role to a player using player Id
+  /**
+   * Assign role to a player (spy-master or guesser)
+   * @param {string} playerId - Player ID
+   * @param {string} role - Role ('spy-master' or 'guesser')
+   */
   assignRole(playerId, role) {
     this.redTeam.players.forEach((item) => {
       if (item.id === playerId) {
@@ -170,17 +206,28 @@ class GameEngine {
       red: redList,
     };
   }
-  // Sets the current user
+  /**
+   * Set the game host
+   * @param {Object} user - User object
+   */
   setHost(user) {
     this.host = user;
   }
 
-  // Updated players in the array for this game
+  /**
+   * Get all current players in the game
+   * @returns {Array} Array of player objects
+   */
   getCurrentPlayers() {
     return this.players;
   }
 
-  // New user joins the game and gets added to players array of the game
+  /**
+   * Add a new player to the game
+   * Prevents duplicate entries
+   * @param {Object} user - User object with id and name
+   * @returns {Array} Updated players array
+   */
   joinGame(user) {
     if (this.players.length === 0) {
       this.players.push(user);
@@ -198,36 +245,43 @@ class GameEngine {
     return this.players;
   }
 
+  /**
+   * Start the game - change status from 'setup' to 'running'
+   */
   startGame() {
     this.gameStatus = "running";
   }
 
-  //Reset the game to initial state
+  /**
+   * Reset game to initial state
+   * Creates new board and resets teams
+   */
   resetGame() {
     this.redTeam = new Team("red");
     this.blueTeam = new Team("blue");
     this.board = this.createBoard();
     this.turn = "blue";
-
-    console.log("Game was reset!!!");
   }
 
-  //change Turn
+  /**
+   * Switch turn between teams
+   */
   changeTurn() {
     if (this.turn == "blue") {
       this.turn = "red";
-      console.log(`${this.turn} team's turn!`);
     } else {
       this.turn = "blue";
-      console.log(`${this.turn} team's turn!`);
     }
   }
 
-  // Any Team member picks a card
+  /**
+   * Handle card selection by a player
+   * Updates game state based on card type (red, blue, innocent, assassin)
+   * @param {string} team - Team making the move
+   * @param {number} cardIndex - Index of the selected card
+   */
   pickCard(team, cardIndex) {
     let cardType = this.board[cardIndex].type;
-    console.log(`${team} team picks a: ${cardType} card`);
-
     this.board[cardIndex].clicked = true;
 
     switch (cardType) {
@@ -242,20 +296,14 @@ class GameEngine {
         break;
       case "red":
         this.redTeam.addPoint();
-        if (team === this.redTeam.name) {
-          console.log(`${team} gets 1 point`);
-        } else {
+        if (team !== this.redTeam.name) {
           this.changeTurn();
-          console.log(`${team} turn over`);
         }
         break;
       case "blue":
         this.blueTeam.addPoint();
-        if (team === this.blueTeam.name) {
-          console.log(`${team} gets 1 point`);
-        } else {
+        if (team !== this.blueTeam.name) {
           this.changeTurn();
-          console.log(`${team} turn over`);
         }
         break;
       default:
@@ -265,7 +313,11 @@ class GameEngine {
     this.gameDecision();
   }
 
-  // Any case where game comes to an end
+  /**
+   * End the game and set winner
+   * @param {string} winner - Winning team ('red' or 'blue')
+   * @param {string} method - How game ended ('assassin', 'lastCard', 'manual')
+   */
   gameOver(winner, method) {
     const capitalizeWinner = (name) => {
       return name.charAt(0).toUpperCase() + name.slice(1);
@@ -276,18 +328,12 @@ class GameEngine {
           this.endGame.winner = capitalizeWinner(this.redTeam.name);
           this.endGame.gameOverText = `${capitalizeWinner(
             this.blueTeam.name,
-          )} team picked the asssassin`;
-          console.log(
-            `${this.blueTeam.name} team picked assassin. ${this.redTeam.name} team wins`,
-          );
+          )} team picked the assassin`;
         } else {
           this.endGame.winner = capitalizeWinner(this.blueTeam.name);
           this.endGame.gameOverText = `${capitalizeWinner(
             this.redTeam.name,
-          )} team picked the asssassin`;
-          console.log(
-            `${this.redTeam.name} team picked assassin. ${this.blueTeam.name} team wins`,
-          );
+          )} team picked the assassin`;
         }
         break;
       case "lastCard":
@@ -296,13 +342,11 @@ class GameEngine {
           this.endGame.gameOverText = `${capitalizeWinner(
             this.redTeam.name,
           )} found all of their cards`;
-          console.log(`${this.redTeam.name} team wins - all cards found`);
         } else {
           this.endGame.winner = capitalizeWinner(this.blueTeam.name);
           this.endGame.gameOverText = `${capitalizeWinner(
             this.blueTeam.name,
           )} found all of their cards`;
-          console.log(`${this.blueTeam.name}team wins - all cards found`);
         }
         break;
       case "manual":
@@ -316,22 +360,25 @@ class GameEngine {
     this.gameStatus = "over";
   }
 
-  // Decision whether blue or red wins
+  /**
+   * Check if either team has reached winning score
+   * Automatically ends game if condition is met
+   */
   gameDecision() {
     const winningScoreRed = this.startingTeam === "red" ? 9 : 8;
     const winningScoreBlue = this.startingTeam === "red" ? 9 : 8;
 
     if (this.redTeam.points === winningScoreRed) {
       this.gameOver(this.redTeam.name, "lastCard");
-      console.log(`${this.redTeam.name} wins the game`);
     } else if (this.blueTeam.points === winningScoreBlue) {
       this.gameOver(this.blueTeam.name, "lastCard");
-      console.log(`${this.blueTeam.name} wins the game`);
-    } else {
-      console.log("Next Move Please!");
     }
   }
 
+  /**
+   * Reset game for a new round
+   * Keeps same players but resets board, scores, and status
+   */
   playAgain() {
     this.redTeam.resetPoints();
     this.blueTeam.resetPoints();

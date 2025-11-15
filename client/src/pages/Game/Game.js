@@ -41,7 +41,6 @@ const Game = (props) => {
   useEffect(() => {
     // join the match
     socket.emit("init-game", { gameId }, (recv) => {
-      console.log("Game State:", recv);
       setTeamList(recv.state.teamList);
       setName(recv.name);
       setMessages(recv.messages);
@@ -75,7 +74,6 @@ const Game = (props) => {
     });
 
     socket.on("update-game", (recv) => {
-      console.log("Updated Game State:", recv);
 
       // set current state of the game
       setGameStatus(recv.gameStatus);

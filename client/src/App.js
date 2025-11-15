@@ -17,22 +17,24 @@ const App = () => {
   const [, setUser] = useUser();
   const [isLoading, setIsLoading] = useState(true);
 
-  const getProfile = async (decoded) => {
-    try {
-      const result = await axios.get(`/profile/${decoded.id}`);
-      const { id, email, name, profileImageLocation } = result.data;
-      setUser({
-        id,
-        email,
-        name,
-        profileImageLocation,
-      });
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
   useEffect(() => {
+    const getProfile = async (decoded) => {
+      try {
+        const result = await axios.get(`/profile/${decoded.id}`);
+        const { id, email, name, profileImageLocation } = result.data;
+        setUser({
+          id,
+          email,
+          name,
+          profileImageLocation,
+        });
+      } catch (err) {
+        // Error loading profile - user may need to login again
+        setUser(null);
+        delete axios.defaults.headers.common["Authorization"];
+      }
+    };
+
     const onLoad = async () => {
       // check if token already set, if so assign user data to context
       const token = Cookies.get("token");

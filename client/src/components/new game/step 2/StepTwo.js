@@ -35,13 +35,11 @@ const StepTwo = (props) => {
 
   useEffect(() => {
     // User joins the room
-    console.log("joining game", id);
     socket.emit("join-game", {
       gameId: id,
     });
 
     socket.on("update-players", (game) => {
-      console.log("Updated players:", game.players);
       setGameStatus(game.gameStatus);
       setPlayers(game.players);
       setHostId(game.host._id);

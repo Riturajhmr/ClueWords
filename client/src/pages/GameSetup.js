@@ -37,7 +37,6 @@ const GameSetup = (props) => {
   // When host ends the game and clicks play again button, this socket fetches the reset version fo the same game with the same players
   useEffect(() => {
     socket.on("play-again", (currentGame) => {
-      console.log("Play-again:", currentGame.players);
       setGameStatus(currentGame.gameStatus);
       setNewGame(1);
     });
@@ -55,7 +54,6 @@ const GameSetup = (props) => {
   useEffect(() => {
     //Shows players now assigned on teams and roles, ALSO - change gameStatus now === "running"
     socket.on("update-roles", (game) => {
-      console.log("socket-on-update-roles", game);
       setGameStatus(game.gameStatus);
     });
   }, [gameStatus, setGameStatus]);
